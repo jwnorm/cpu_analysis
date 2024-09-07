@@ -1,0 +1,169 @@
+---
+title: "Homework #1: Simple Linear Regression"
+format: html
+editor: visual
+---
+
+**Jacob Norman\
+2024-09-07**
+
+This is the first assignment for the course *ISE537: Statistical Models for Systems Analytics in Industrial Engineering*. I have not used `R` in quite a while, so this will be a great way to get a refresher on basic syntax and get used to new features.
+
+I am choosing to use the new (to me anyway) Quarto document (*.qmd*) instead of an R Markdown (*.rmd*) file. My understanding is that they function very similarly, but the big advantage is that multiple programming languages are supported in a *.qmd* file. For now, we will keep it to just `R`, but good to know I can mix in `Python` or `Julia` if needed.
+
+## 1. True/False
+
+This section covers the true or false questions concerning simple linear regression.
+
+| Q1  | Q2  | Q3  | Q4  | Q5  | Q6  | Q7  | Q8  |
+|-----|-----|-----|-----|-----|-----|-----|-----|
+| F   | T   | T   | F\* | T\* | F   | T   | T   |
+
+## 2. Data Analysis
+
+Before we begin our analysis, it is necessary to import the required packages. Since we will use many of the packages in the `tidyverse` ecosystem, let's just go ahead and import all of them.
+
+```{r}
+#install.packages("tidyverse")
+library("tidyverse")
+```
+
+With that, let's read our data into a tidy dataframe, known as a `tibble`, from the file *machine.csv*. This data set comes from the [UCI Machine Learning Repository](https://archive.ics.uci.edu/dataset/29/computer+hardware).
+
+```{r}
+df <- as_tibble(read.csv("data/machine.csv"))
+summary(df)
+```
+
+We can see that there are three columns in our `df`:
+
+-   `vendor` (char): vendor of the CPU
+
+-   `chmax` (int): maximum channels in CPU
+
+-   `performance` (int): published relative performance of CPU
+
+Let's get a small preview of what the data looks like:
+
+```{r}
+df %>% head(10)
+```
+
+### 2.1 Exploratory Data Analysis
+
+Now we are prepared to actually analyze the data. We will start with a simple scatter plot comparing `performance` against `chmax`.
+
+```{r}
+ggplot(df, aes(chmax, performance, alpha=0.5)) +
+  geom_point() +
+  geom_smooth(formula = y ~ x, method = "lm") +
+  ggtitle("Relationship between chmax and performance") +
+  theme(legend.position = "none")
+```
+
+Based on the regression line, there appears to be a positive linear relationship between `chmax` and `performance`. In other words, as the maximum number of channels of a CPU increases, the performance of the CPU does as well, generally speaking.
+
+In order to get a better idea of the relationship between the two variables, let's compute the correlation coefficient.
+
+```{r}
+cor(df$chmax, df$performance)
+```
+
+Pearson's correlation coefficient is scaled from -1 to +1, so a value of 0.61 indicates that there is a moderate, positive correlation between `chmax` and `performance`.
+
+Due to the moderate correlation, it would make sense to model this problem using simple linear regression; however, keep in mind this does not perfectly capture the relationship between the two variables. Based on the scatter plot and regression line, there are several residuals that are quite large. This indicates that there are additional sources of variation not being captured in this relationship.
+
+### 2.2 Fitting the Simple Linear Regression Model
+
+Now we will actually fit a simple linear regression model. The true regression equation with one predictor is:
+
+$$
+y_i=\beta_0+\beta_1x_i+\epsilon_i
+$$
+
+However, we do not know the true value of parameters $\beta_0$ and $\beta_1$, so we must estimate them. This gives us the following equation:
+
+$$
+\hat{y_i}=\hat\beta_0+\hat\beta_1x_i
+$$
+
+In this case, $\hat{y_i}$ represents estimated `performance` and $x_i$ represents actual `chmax` at a given index $i$.
+
+```{r}
+model1 <- lm(performance ~ chmax, df)
+broom::tidy(model1)
+```
+
+The estimated intercept term, $\hat\beta_0$, is 37.23, while the estimated slope term, $\hat\beta_1$, is 3.74. This means that the estimated regression equation, rounded to two decimal places, looks like this:
+
+$$
+\hat{y_i}=37.23+3.74x_i
+$$\
+The estimated slope, $\hat\beta_1$, suggests that for each additional maximum channel in a CPU, the relative performance is estimated to increase by 3.74 units.
+
+Let's run a 95% confidence interval to determine the range that the true $\beta_1$ might fall in.
+
+```{r}
+confint(model1, level = 0.95)
+```
+
+We can say that we are 95% confident that the true value of $\beta_1$ is between 3.07 and 4.42. Since the interval does not contain zero, we can say that this parameter is significant at a 95% level.
+
+Alternatively, we could run a hypothesis test on $\beta_1$ to determine if it is significantly different from zero. Recall the output of `model1`:
+
+```{r}
+broom::tidy(model1)
+```
+
+The second row corresponds to $\hat\beta_1$. We see that the p-value is near zero (2.85e-22), which is less than the significance ($\alpha$) level of 0.01. This tells us that we reject $H_0$ and conclude that there is sufficient evidence to suggest that $\beta_1$ is different from zero. In other words, there is a positive relationship between the maximum number of channels in a CPU and its performance.
+
+## Additional Analysis
+
+Beyond the scope of Homework #1, I am interested to see if the vendor has an impact on the expected performance of a CPU.
+
+First, we will fit a multiple linear regression model which includes the `vendor` as a predictor and then write the estimated parameter values for each vendor to a `tibble`.
+
+```{r}
+# model fitting - multiple linear regression
+model2 <- lm(performance ~ chmax + vendor, df)
+
+# determine vendor estimates of model2
+vendors <- broom::tidy(model2) %>%
+  filter(str_detect(term, "vendor"))
+
+# extract name of vendor into new column
+vendors$vendor <- str_extract(vendors$term, "vendor(.*)", group = 1)
+```
+
+Now, let's plot our results:
+
+```{r}
+ggplot(vendors, aes(reorder(vendor, estimate), estimate)) +
+  geom_bar(stat = "identity") +
+  coord_flip() +
+  labs(title="Estimated beta for vendors", x='vendor') +
+#  theme_minimal() +
+  theme(panel.grid.major.y = element_blank())
+```
+
+The vendor *Amdahl* seems to have the largest impact on relative CPU performance. Interestingly, *Microdata* is the only vendor with a negative effect on relative performance.
+
+To close, we will verify that all of the `vendor` parameters are significant at significance level $\alpha$=0.01:
+
+```{r}
+vendors %>%
+  filter(p.value > 0.01)
+```
+
+*Microdata*, which we just noted had an inverse relationship with `performance`, has a p-value around 0.23. This certainly does not pass the threshold to be deemed significant.
+
+My suspicion is that there is a low number of samples of this vendor in the `df`. Let's quickly verify:
+
+```{r}
+df %>%
+  group_by(vendor) %>%
+  summarize(n = n()) %>%
+  arrange(n)
+```
+
+We can see that there is only one sample of *Microdata* CPUs in the `df`, so it holds that we are not confident that this parameter is different from zero. To improve the fit of our model, I recommend collecting more samples of CPUs from all vendors that have a low number of represented CPUs in our `df`.
