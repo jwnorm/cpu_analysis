@@ -1,6 +1,8 @@
 ---
 title: "Homework #1: Simple Linear Regression"
-format: html
+format:
+  html:
+    embed-resources: true
 editor: visual
 ---
 
@@ -17,7 +19,7 @@ This section covers the true or false questions concerning simple linear regress
 
 | Q1  | Q2  | Q3  | Q4  | Q5  | Q6  | Q7  | Q8  |
 |-----|-----|-----|-----|-----|-----|-----|-----|
-| F   | T   | T   | F\* | T\* | F   | T   | T   |
+| F   | T   | T   | T   | T   | F   | T   | F   |
 
 ## 2. Data Analysis
 
@@ -57,21 +59,28 @@ Now we are prepared to actually analyze the data. We will start with a simple sc
 ggplot(df, aes(chmax, performance, alpha=0.5)) +
   geom_point() +
   geom_smooth(formula = y ~ x, method = "lm") +
-  ggtitle("Relationship between chmax and performance") +
+  labs(title="Relationship Between Performance and Maximum Channels", 
+       x="Maximum Number of Channels", 
+       y="Relative CPU Performance") +
   theme(legend.position = "none")
 ```
 
-Based on the regression line, there appears to be a positive linear relationship between `chmax` and `performance`. In other words, as the maximum number of channels of a CPU increases, the performance of the CPU does as well, generally speaking.
+Based on the regression line, there appears to be a positive, linear relationship between `chmax` and `performance`. In other words, as the maximum number of channels of a CPU increases, the relative performance of the CPU does as well, generally speaking.
 
-In order to get a better idea of the relationship between the two variables, let's compute the correlation coefficient.
+In order to get a better idea of the strength of the relationship between the two variables, let's compute the correlation coefficient.
 
 ```{r}
 cor(df$chmax, df$performance)
 ```
 
-Pearson's correlation coefficient is scaled from -1 to +1, so a value of 0.61 indicates that there is a moderate, positive correlation between `chmax` and `performance`.
+Pearson's correlation coefficient is scaled from -1 to +1, so a value of approximately 0.61 indicates that there is a moderate, positive correlation between `chmax` and `performance`.
 
-Due to the moderate correlation, it would make sense to model this problem using simple linear regression; however, keep in mind this does not perfectly capture the relationship between the two variables. Based on the scatter plot and regression line, there are several residuals that are quite large. This indicates that there are additional sources of variation not being captured in this relationship.
+Based on this exploratory data analysis, it would make sense to model this relationship using simple linear regression. This is because the two variables:
+
+1.  Seem to possess an approximately linear relationship upon visual inspection; and
+2.  Have a moderate, positive correlation between them.
+
+However, keep in mind this does not perfectly capture the relationship between the two variables. Based on the scatter plot and regression line, there are several residuals that are quite large. Additionally, the correlation coefficient is not greater than 0.75, which would indicate a strong relationship. These facts suggest that there are additional sources of variation not being captured in this model.
 
 ### 2.2 Fitting the Simple Linear Regression Model
 
@@ -115,13 +124,13 @@ Alternatively, we could run a hypothesis test on $\beta_1$ to determine if it is
 broom::tidy(model1)
 ```
 
-The second row corresponds to $\hat\beta_1$. We see that the p-value is near zero (2.85e-22), which is less than the significance ($\alpha$) level of 0.01. This tells us that we reject $H_0$ and conclude that there is sufficient evidence to suggest that $\beta_1$ is different from zero. In other words, there is a positive relationship between the maximum number of channels in a CPU and its performance.
+The second row corresponds to $\hat\beta_1$. We see that the p-value is near zero (2.85e-22), which is less than the significance ($\alpha$) level of 0.01. Therefore, we reject $H_0$ and conclude that there is sufficient evidence to suggest that $\beta_1$ is different from zero. In other words, there is a positive relationship between the maximum number of channels in a CPU and its performance.
 
 ## Additional Analysis
 
 Beyond the scope of Homework #1, I am interested to see if the vendor has an impact on the expected performance of a CPU.
 
-First, we will fit a multiple linear regression model which includes the `vendor` as a predictor and then write the estimated parameter values for each vendor to a `tibble`.
+First, we will fit a multiple linear regression model which includes `vendor` as a predictor and then write the estimated parameter values for each vendor to a `tibble`.
 
 ```{r}
 # model fitting - multiple linear regression
@@ -141,8 +150,9 @@ Now, let's plot our results:
 ggplot(vendors, aes(reorder(vendor, estimate), estimate)) +
   geom_bar(stat = "identity") +
   coord_flip() +
-  labs(title="Estimated beta for vendors", x='vendor') +
-#  theme_minimal() +
+  labs(title="Estimated Beta for Vendors",
+       x="Vendor",
+       y="Estimate") +
   theme(panel.grid.major.y = element_blank())
 ```
 
