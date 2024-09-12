@@ -65,7 +65,7 @@ ggplot(df, aes(chmax, performance, alpha=0.5)) +
   theme(legend.position = "none")
 ```
 
-Based on the regression line, there appears to be a positive, linear relationship between `chmax` and `performance`. In other words, as the maximum number of channels of a CPU increases, the relative performance of the CPU does as well, generally speaking.
+Based on the scatter plot and regression line, there appears to be a positive, linear relationship between `chmax` and `performance`. In other words, as the maximum number of channels of a CPU increases, the relative performance of the CPU does as well, generally speaking. It does appear that there is more variation in the relationship as the maximum number of channels exceeds 10.
 
 In order to get a better idea of the strength of the relationship between the two variables, let's compute the correlation coefficient.
 

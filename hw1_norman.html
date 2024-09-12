@@ -3241,7 +3241,7 @@ window.Quarto = {
 </div>
 </div>
 </div>
-<p>Based on the regression line, there appears to be a positive, linear relationship between <code>chmax</code> and <code>performance</code>. In other words, as the maximum number of channels of a CPU increases, the relative performance of the CPU does as well, generally speaking.</p>
+<p>Based on the scatter plot and regression line, there appears to be a positive, linear relationship between <code>chmax</code> and <code>performance</code>. In other words, as the maximum number of channels of a CPU increases, the relative performance of the CPU does as well, generally speaking. It does appear that there is more variation in the relationship as the maximum number of channels exceeds 10.</p>
 <p>In order to get a better idea of the strength of the relationship between the two variables, let’s compute the correlation coefficient.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cor</span>(df<span class="sc">$</span>chmax, df<span class="sc">$</span>performance)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
